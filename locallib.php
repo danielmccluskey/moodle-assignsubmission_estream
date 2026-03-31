@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * local library class for the Planet eStream Assignment Submission Plugin
  * extends submission plugin base class
@@ -29,8 +30,9 @@ class assign_submission_estream extends assign_submission_plugin
      * Get the name of the online text submission plugin
      * @return string
      */
-    public function get_name() {
-            return get_string('shortname', 'assignsubmission_estream');
+    public function get_name()
+    {
+        return get_string('shortname', 'assignsubmission_estream');
     }
     /**
      * Save the submission plugin settings
@@ -38,8 +40,9 @@ class assign_submission_estream extends assign_submission_plugin
      * @param stdClass $data
      * @return bool
      */
-    public function save_settings(stdClass $data) {
-            return true;
+    public function save_settings(stdClass $data)
+    {
+        return true;
     }
     /**
      * Read the submission information from the database
@@ -47,47 +50,56 @@ class assign_submission_estream extends assign_submission_plugin
      * @param  int $submissionid
      * @return mixed
      */
-    private function funcgetsubmission($submissionid) {
-            global $DB;
-            return $DB->get_record('assignsubmission_estream', array(
-                    'submission' => $submissionid
-            ));
+    private function funcgetsubmission($submissionid)
+    {
+        global $DB;
+        return $DB->get_record('assignsubmission_estream', array(
+            'submission' => $submissionid
+        ));
+    }
+
+    /**
+     * Determine whether a cdid value is empty.
+     *
+     * @param mixed $cdid
+     * @return bool
+     */
+    private function is_empty_cdid($cdid)
+    {
+        return trim((string)$cdid) === '';
     }
     /**
      * Embed the player
      *
      * @return string
      */
-    public function funcembedplayer($cdid, $embedcode) {
-        $url = rtrim(get_config('assignsubmission_estream', 'url') , '/');
+    public function funcembedplayer($cdid, $embedcode)
+    {
+        $url = rtrim(get_config('assignsubmission_estream', 'url'), '/');
         if ($cdid == "") {
             return "<p>" . get_config('assignsubmission_estream', 'emptyoverride') . "</p>";
         } else {
-			
-			   if(strpos($cdid, '¬') !== false){ // Multiple uploads
-			   
-	$CDIDs = explode("¬", $cdid);
-				 $Codes = explode("¬", $embedcode);	
-				 $strReturn = '';
 
-				  for($i = 0;$i<count($CDIDs);$i++){
+            if (strpos($cdid, '¬') !== false) { // Multiple uploads
 
-			 $strReturn .="<iframe allowfullscreen height=\"198\" width=\"352\" src=\"".$url."/Embed.aspx?id=".$CDIDs[$i]
-            ."&amp;code=".$Codes[$i]."&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>&nbsp;";
-					 
-				}
-				
-				return $strReturn;
-				
-				      return "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"".$url."/Embed.aspx?id=123&amp;code=123&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>";
- 
-			   } else {
-				   
-				        return "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"".$url."/Embed.aspx?id=".$cdid
-            ."&amp;code=".$embedcode."&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>";
-				   
-			   }
-			       
+                $CDIDs = explode("¬", $cdid);
+                $Codes = explode("¬", $embedcode);
+                $strReturn = '';
+
+                for ($i = 0; $i < count($CDIDs); $i++) {
+
+                    $strReturn .= "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"" . $url . "/Embed.aspx?id=" . $CDIDs[$i]
+                        . "&amp;code=" . $Codes[$i] . "&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>&nbsp;";
+                }
+
+                return $strReturn;
+
+                return "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"" . $url . "/Embed.aspx?id=123&amp;code=123&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>";
+            } else {
+
+                return "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"" . $url . "/Embed.aspx?id=" . $cdid
+                    . "&amp;code=" . $embedcode . "&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>";
+            }
         }
     }
     /**
@@ -97,107 +109,66 @@ class assign_submission_estream extends assign_submission_plugin
      * @param stdClass $data
      * @return bool
      */
-    public function save(stdClass $submission, stdClass $data) {
-		
-		
-		
-	    try {			
-		
-			 global $DB;
-			 $thissubmission = $this->funcgetsubmission($submission->id);
-			 			 			 
-			  if(empty($thissubmission->id)) { // New submission
-				  
-				 if (empty($data->cdid)) { // Not adding vid
-			
-					if (get_config('assignsubmission_estream', 'forcesubmit') == true) {
-				
-					// Do nothing, user is forced to submit something
-					echo 'new, nothing, force';
-					
-						$this->set_error(get_string('error_force', 'assignsubmission_estream', $this->get_error()));
-					return false;
-				
-					} else {
-						
-						echo 'new, nothing, no force';
-				
-						    $thissubmission = new stdClass();
-							$thissubmission->submission = $submission->id;
-							$thissubmission->assignment = $this->assignment->get_instance()->id;
-							$thissubmission->embedcode = "";
-							$thissubmission->cdid = "";
-							return $DB->insert_record('assignsubmission_estream', $thissubmission) > 0;
-				
-					}
-			
-				} else { // New sub, add video(s)
-							 
-				  echo 'new, video';
-							 
-					 $thissubmission = new stdClass();
-                    $thissubmission->submission = $submission->id;
-                    $thissubmission->assignment = $this->assignment->get_instance()->id;
-                    $thissubmission->embedcode = $data->embedcode;
-                    $thissubmission->cdid = $data->cdid;
-                    return $DB->insert_record('assignsubmission_estream', $thissubmission) > 0;		 
-					
-				}
-				  
-			} else { // Existing submission
-				  
-				if($data->cdid == $thissubmission->cdid) { // Overwriting with nothing
-			        
-					if (get_config('assignsubmission_estream', 'forcesubmit') == true) {
-				
-					// Do nothing, user is forced to submit something
-					
-					echo 'exist, nothing, force';
-					
-					$this->set_error(get_string('error_force', 'assignsubmission_estream', $this->get_error()));
-					return false;
-				
-					} else {
-						
-						echo 'exist, nothing, no force';
-						
-						if (get_config('assignsubmission_estream', 'overwriteblank') == true) {
-														
-						$thissubmission->submission = $submission->id;
-						$thissubmission->assignment = $this->assignment->get_instance()->id;
-						$thissubmission->embedcode = "";
-						$thissubmission->cdid = "";
-						return $DB->update_record('assignsubmission_estream', $thissubmission);
-							
-						} else {
-							
-							
-					
-						return true;						
-						
-						} 
-																	
-					}
-											
-				} else { 
-				
-				echo 'exist, video';
-				
-                     $thissubmission->submission = $submission->id;
-                    $thissubmission->assignment = $this->assignment->get_instance()->id;
-                    $thissubmission->embedcode = $data->embedcode;
-                    $thissubmission->cdid = $data->cdid;
-                    return $DB->update_record('assignsubmission_estream', $thissubmission);		
-					
-				}
-				  
-		 }
-		
+    public function save(stdClass $submission, stdClass $data)
+    {
+        try {
+            global $DB;
+            $thissubmission = $this->funcgetsubmission($submission->id);
+
+            $incomingcdid = isset($data->cdid) ? trim((string)$data->cdid) : '';
+            $incomingembedcode = isset($data->embedcode) ? trim((string)$data->embedcode) : '';
+            $hasincomingitem = !$this->is_empty_cdid($incomingcdid);
+
+            if (!$thissubmission) {
+                if (!$hasincomingitem && get_config('assignsubmission_estream', 'forcesubmit')) {
+                    $this->set_error(get_string('error_force', 'assignsubmission_estream'));
+                    return false;
+                }
+
+                $thissubmission = new stdClass();
+                $thissubmission->submission = $submission->id;
+                $thissubmission->assignment = $this->assignment->get_instance()->id;
+                $thissubmission->embedcode = $hasincomingitem ? $incomingembedcode : '';
+                $thissubmission->cdid = $hasincomingitem ? $incomingcdid : '';
+
+                return $DB->insert_record('assignsubmission_estream', $thissubmission) > 0;
+            }
+
+            $storedcdid = trim((string)$thissubmission->cdid);
+            $storedembedcode = trim((string)$thissubmission->embedcode);
+            $hasstoreditem = !$this->is_empty_cdid($storedcdid);
+
+            if (!$hasincomingitem) {
+                if (get_config('assignsubmission_estream', 'forcesubmit')) {
+                    $this->set_error(get_string('error_force', 'assignsubmission_estream'));
+                    return false;
+                }
+
+                if (!$hasstoreditem) {
+                    return true;
+                }
+
+                if (!get_config('assignsubmission_estream', 'overwriteblank')) {
+                    return true;
+                }
+
+                $thissubmission->assignment = $this->assignment->get_instance()->id;
+                $thissubmission->embedcode = '';
+                $thissubmission->cdid = '';
+                return $DB->update_record('assignsubmission_estream', $thissubmission);
+            }
+
+            if ($incomingcdid === $storedcdid && $incomingembedcode === $storedembedcode) {
+                return true;
+            }
+
+            $thissubmission->assignment = $this->assignment->get_instance()->id;
+            $thissubmission->embedcode = $incomingembedcode;
+            $thissubmission->cdid = $incomingcdid;
+            return $DB->update_record('assignsubmission_estream', $thissubmission);
         } catch (Exception $e) {
-			
-           echo 'Error: ' . $e;
-		   
-            // Non-fatal exception!
+            debugging('assignsubmission_estream save failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
         }
     }
     /**
@@ -206,7 +177,8 @@ class assign_submission_estream extends assign_submission_plugin
      * @param stdClass $submission
      * @return string
      */
-    public function view(stdClass $submission) {
+    public function view(stdClass $submission)
+    {
         $thissubmission = $this->funcgetsubmission($submission->id);
         if ($thissubmission) {
             return $this->funcembedplayer($thissubmission->cdid, $thissubmission->embedcode);
@@ -221,7 +193,8 @@ class assign_submission_estream extends assign_submission_plugin
      * @param bool $showviewlink Set this to true if the list of files is long
      * @return string
      */
-    public function view_summary(stdClass $submission, &$showviewlink) {
+    public function view_summary(stdClass $submission, &$showviewlink)
+    {
         return $this->view($submission);
     }
     /**
@@ -231,100 +204,98 @@ class assign_submission_estream extends assign_submission_plugin
      * @param int $version old assignment version
      * @return bool True if upgrade is possible
      */
-    public function can_upgrade($type, $version) {
+    public function can_upgrade($type, $version)
+    {
         return false;
     }
-  
-	 
-	public function atto_planetestream_obfuscate($strx) {
-    $strbase64chars = '0123456789aAbBcCDdEeFfgGHhiIJjKklLmMNnoOpPQqRrsSTtuUvVwWXxyYZz/+=';
-    $strbase64string = base64_encode($strx);
-    if ($strbase64string == '') {
-        return '';
-    }
-    $strobfuscated = '';
-    for ($i = 0; $i < strlen ($strbase64string); $i ++) {
-        $intpos = strpos($strbase64chars, substr($strbase64string, $i, 1));
-        if ($intpos == - 1) {
+
+
+    public function atto_planetestream_obfuscate($strx)
+    {
+        $strbase64chars = '0123456789aAbBcCDdEeFfgGHhiIJjKklLmMNnoOpPQqRrsSTtuUvVwWXxyYZz/+=';
+        $strbase64string = base64_encode($strx);
+        if ($strbase64string == '') {
             return '';
         }
-        $intpos += strlen($strbase64string ) + $i;
-        $intpos = $intpos % strlen($strbase64chars);
-        $strobfuscated .= substr($strbase64chars, $intpos, 1);
-    }
-    return urlencode($strobfuscated);
-}
-	 
-	 
-	 function atto_planetestream_getchecksum() {
-    $decchecksum = (float)(date('d') + date('m')) + (date('m') * date('d')) + (date('Y') * date('d'));
-    $decchecksum += $decchecksum * (date('d') * 2.27409) * .689274;
-    return md5(floor($decchecksum));
-}
-
-
-function atto_planetestream_getauthticket($url, $checksum, $delta, $userip, &$params) {
-    $return = '';
-	
-	//$return = $url . "~~~" . $checksum . "~~~~" . $delta . "~~~~" . $userip;
-    try {
-        $url .= '/VLE/Moodle/Auth/?source=1&assign=1&checksum=' . $checksum . '&delta=' . $delta . '&u=' . $userip;
-        if (!$curl = curl_init($url)) {
-           return '';
-		   //return $return;
+        $strobfuscated = '';
+        for ($i = 0; $i < strlen($strbase64string); $i++) {
+            $intpos = strpos($strbase64chars, substr($strbase64string, $i, 1));
+            if ($intpos == -1) {
+                return '';
+            }
+            $intpos += strlen($strbase64string) + $i;
+            $intpos = $intpos % strlen($strbase64chars);
+            $strobfuscated .= substr($strbase64chars, $intpos, 1);
         }
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 15);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 15);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($curl, CURLOPT_MAXREDIRS, 4);
-        curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        $response = curl_exec($curl);
-        if (strpos($response, '{"ticket":') === 0) {
-            $jobj = json_decode($response);
-            $return = $jobj->ticket;
-            $params['estream_height'] = $jobj->height;
-            $params['estream_width'] = $jobj->width;
+        return urlencode($strobfuscated);
+    }
+
+
+    function atto_planetestream_getchecksum()
+    {
+        $decchecksum = (float)(date('d') + date('m')) + (date('m') * date('d')) + (date('Y') * date('d'));
+        $decchecksum += $decchecksum * (date('d') * 2.27409) * .689274;
+        return md5(floor($decchecksum));
+    }
+
+
+    function atto_planetestream_getauthticket($url, $checksum, $delta, $userip, &$params)
+    {
+        $return = '';
+
+        //$return = $url . "~~~" . $checksum . "~~~~" . $delta . "~~~~" . $userip;
+        try {
+            $url .= '/VLE/Moodle/Auth/?source=1&assign=1&checksum=' . $checksum . '&delta=' . $delta . '&u=' . $userip;
+            if (!$curl = curl_init($url)) {
+                return '';
+                //return $return;
+            }
+            curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 15);
+            curl_setopt($curl, CURLOPT_TIMEOUT, 15);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($curl, CURLOPT_MAXREDIRS, 4);
+            curl_setopt($curl, CURLOPT_FORBID_REUSE, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            $response = curl_exec($curl);
+            if (strpos($response, '{"ticket":') === 0) {
+                $jobj = json_decode($response);
+                $return = $jobj->ticket;
+                $params['estream_height'] = $jobj->height;
+                $params['estream_width'] = $jobj->width;
+            }
+        } catch (Exception $e) {
+            // ... non-fatal ...
         }
-    } catch (Exception $e) {
-        // ... non-fatal ...
-    }
-    return $return;
-}
-
-public function remove(stdClass $submission) {
-      //  global $DB;
-        //delete database record
-     //   $submissionid = $submission ? $submission->id : 0;
-      //  if ($submissionid) {
-         //   $DB->delete_records('assignsubmission_estream', array(
-               // 'assignment' => $this->assignment->get_instance()->id
-    //    ));
-
-            //delete recorded files
-           // $fs = get_file_storage();
-           // $fs->delete_area_files($this->assignment->get_context()->id,
-                  //  'assignsubmission_planetestream',
-                  //  constants::'onlinepoodll_backimage',
-                  //  $submission->id);
-      //  }
-
-
-
-      //  return true;
+        return $return;
     }
 
-	 
-   public function delete_instance() {
+    public function remove(stdClass $submission)
+    {
+        global $DB;
+
+        if (empty($submission->id)) {
+            return true;
+        }
+
+        $DB->delete_records('assignsubmission_estream', array(
+            'submission' => $submission->id
+        ));
+
+        return true;
+    }
+
+
+    public function delete_instance()
+    {
         global $DB;
         $DB->delete_records('assignsubmission_estream', array(
-                'assignment' => $this->assignment->get_instance()->id
+            'assignment' => $this->assignment->get_instance()->id
         ));
         try {
-            $cs = ( float )(date('d') + date('m')) + (date('m') * date('d')) + (date('Y') * date('d'));
+            $cs = (float)(date('d') + date('m')) + (date('m') * date('d')) + (date('Y') * date('d'));
             $cs += $cs * (date('d') * 2.27409) * .689274;
-            $url = rtrim(get_config('assignsubmission_estream', 'url') , '/');       
+            $url = rtrim(get_config('assignsubmission_estream', 'url'), '/');
             $url = $url . "/UploadSubmissionVLE.aspx?mad=" . $this->assignment->get_instance()->id . "&checksum=" . md5(floor($cs));
             if (!$curl = curl_init($url)) {
                 $this->log('curl init failed [187].');
@@ -346,9 +317,26 @@ public function remove(stdClass $submission) {
      * @param stdClass $submission
      * @return bool
      */
-    public function is_empty(stdClass $submission) {
-       return $this->view($submission) == ''; 	
-	 /* Return false does not work. Return true 'works' in the sense that it doesn't regardless of file  */
+    public function is_empty(stdClass $submission)
+    {
+        $thissubmission = $this->funcgetsubmission($submission->id);
+        if (!$thissubmission) {
+            return true;
+        }
+
+        return $this->is_empty_cdid($thissubmission->cdid);
+    }
+
+    /**
+     * Determine if a new submission is empty before save.
+     *
+     * @param stdClass $data
+     * @return bool
+     */
+    public function submission_is_empty(stdClass $data)
+    {
+        $cdid = isset($data->cdid) ? $data->cdid : '';
+        return $this->is_empty_cdid($cdid);
     }
     /**
      * Add form elements
@@ -358,42 +346,50 @@ public function remove(stdClass $submission) {
      * @param stdClass $data
      * @return true if elements were added to the form
      */
-    public function get_form_elements($submission, MoodleQuickForm $mform, stdClass $data) {
+    public function get_form_elements($submission, MoodleQuickForm $mform, stdClass $data)
+    {
         global $CFG, $USER, $PAGE, $COURSE;
         $cdid = "";
         $embedcode = "";
-        $url = $CFG->httpswwwroot . '/mod/assign/submission/estream/upload.php';
+        $url = new moodle_url('/mod/assign/submission/estream/upload.php', array(
+            'id' => $this->assignment->get_course_module()->id,
+            'sesskey' => sesskey()
+        ));
         $itemtitle = "Submission by " . fullname($USER);
-       if (strlen($itemtitle) > 120) {
+        if (strlen($itemtitle) > 120) {
             $itemtitle = substr($itemtitle, 0, 120);
         }
         $itemdesc = "Assignment : " . $this->assignment->get_instance()->name . "\r\n";
         $itemdesc .= "Course : " . $COURSE->fullname . "\r\n";
-        $url .= '?itemtitle=' . urlencode($itemtitle);
-        $url .= '&itemdesc=' . urlencode($itemdesc);
-        $url .= '&itemaid=' . urlencode($this->assignment->get_instance()->id);
-        $url .= '&itemuid=' . urlencode($USER->id);
-        $url .= '&itemcid=' . urlencode($COURSE->id);
+        $url->param('itemtitle', $itemtitle);
+        $url->param('itemdesc', $itemdesc);
+        $url->param('itemaid', $this->assignment->get_instance()->id);
+        $url->param('itemuid', $USER->id);
+        $url->param('itemcid', $COURSE->id);
         if ($submission) {
             $thissubmission = $this->funcgetsubmission($submission->id);
             if ($thissubmission) {
                 $cdid = $thissubmission->cdid;
                 $embedcode = $thissubmission->embedcode;
                 $iframehtml = $this->funcembedplayer($cdid, $embedcode);
-                $mform->addElement('static', 'currentsubmission',
-                get_string('currentsubmission', 'assignsubmission_estream') , $iframehtml);
-                $url .= '&itemcdid=' . $cdid;
+                $mform->addElement(
+                    'static',
+                    'currentsubmission',
+                    get_string('currentsubmission', 'assignsubmission_estream'),
+                    $iframehtml
+                );
+                $url->param('itemcdid', $cdid);
             }
         }
-       $html = '<script type="text/javascript">';
+        $html = '<script type="text/javascript">';
         $html .= 'document.getElementById("hdn_cdid").value="' . $cdid . '";';
         $html .= 'document.getElementById("hdn_embedcode").value="' . $embedcode . '";';
         $html .= '</script>';
-   
+
         $html .= '<div style="padding-left: 15px; padding-top: 8px; width: 900px; height: 800px; line-height: 160%;">';
-	    $html .= get_config('assignsubmission_estream', 'helptext') . '<br />';
-		 $html .= get_string('upload_help', 'assignsubmission_estream') . '<br />';
-        $html .= '<iframe allow="camera;microphone;display-capture;" src="'.$url.'" width="90%" height="775px" noresize frameborder="0"></iframe>';
+        $html .= get_config('assignsubmission_estream', 'helptext') . '<br />';
+        $html .= get_string('upload_help', 'assignsubmission_estream') . '<br />';
+        $html .= '<iframe allow="camera;microphone;display-capture;" src="' . $url->out(false) . '" width="90%" height="775px" noresize frameborder="0"></iframe>';
         $html .= '</div>';
         $mform->addElement('hidden', 'cdid', '', array('id' => 'hdn_cdid'));
         $mform->addElement('hidden', 'embedcode', '', array('id' => 'hdn_embedcode'));

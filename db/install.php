@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Post-install code for the Planet eStream Assignment Submission Plugin
  *
@@ -22,7 +23,8 @@
  *
  */
 defined('MOODLE_INTERNAL') || die();
-function xmldb_assignsubmission_estream_install() {
+function xmldb_assignsubmission_estream_install()
+{
         global $CFG;
         require_once($CFG->dirroot . '/mod/assign/adminlib.php');
 

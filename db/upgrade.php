@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * DB/upgrade stub for the Planet eStream Assignment Submission Plugin
  *
@@ -21,11 +22,12 @@
  * @license        http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  */
-function xmldb_assignsubmission_estream_upgrade($oldversion) {
+function xmldb_assignsubmission_estream_upgrade($oldversion)
+{
     global $CFG, $DB;
     $dbman = $DB->get_manager();
-	
-	 if ($oldversion < 2021061406) {
+
+    if ($oldversion < 2021061406) {
 
         // Changing type of field cdid on table assignsubmission_estream to char.
         $table = new xmldb_table('assignsubmission_estream');
@@ -33,8 +35,8 @@ function xmldb_assignsubmission_estream_upgrade($oldversion) {
 
         // Launch change of type for field cdid.
         $dbman->change_field_type($table, $field);
-		
-		 // Changing precision of field embedcode on table assignsubmission_estream to (200).
+
+        // Changing precision of field embedcode on table assignsubmission_estream to (200).
         $table = new xmldb_table('assignsubmission_estream');
         $field = new xmldb_field('embedcode', XMLDB_TYPE_CHAR, '1333', null, XMLDB_NOTNULL, null, '0', 'cdid');
 
