@@ -24,6 +24,19 @@
  *
  */
 defined('MOODLE_INTERNAL') || die();
+
+if (!function_exists('assignsubmission_estream_get_cachebuster')) {
+    /**
+     * Build a per-request cache-busting token for iframe URLs.
+     *
+     * @return string
+     */
+    function assignsubmission_estream_get_cachebuster()
+    {
+        return preg_replace('/[^0-9]/', '', sprintf('%.6f', microtime(true)));
+    }
+}
+
 class assign_submission_estream extends assign_submission_plugin
 {
     /**
@@ -76,6 +89,7 @@ class assign_submission_estream extends assign_submission_plugin
     public function funcembedplayer($cdid, $embedcode)
     {
         $url = rtrim(get_config('assignsubmission_estream', 'url'), '/');
+        $cachebuster = assignsubmission_estream_get_cachebuster();
         if ($cdid == "") {
             return "<p>" . get_config('assignsubmission_estream', 'emptyoverride') . "</p>";
         } else {
@@ -89,7 +103,8 @@ class assign_submission_estream extends assign_submission_plugin
                 for ($i = 0; $i < count($CDIDs); $i++) {
 
                     $strReturn .= "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"" . $url . "/Embed.aspx?id=" . $CDIDs[$i]
-                        . "&amp;code=" . $Codes[$i] . "&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>&nbsp;";
+                        . "&amp;code=" . $Codes[$i] . "&amp;wmode=opaque&amp;viewonestream=0&amp;cb=" . $cachebuster
+                        . "\" frameborder=\"0\"></iframe>&nbsp;";
                 }
 
                 return $strReturn;
@@ -98,7 +113,8 @@ class assign_submission_estream extends assign_submission_plugin
             } else {
 
                 return "<iframe allowfullscreen height=\"198\" width=\"352\" src=\"" . $url . "/Embed.aspx?id=" . $cdid
-                    . "&amp;code=" . $embedcode . "&amp;wmode=opaque&amp;viewonestream=0\" frameborder=\"0\"></iframe>";
+                    . "&amp;code=" . $embedcode . "&amp;wmode=opaque&amp;viewonestream=0&amp;cb=" . $cachebuster
+                    . "\" frameborder=\"0\"></iframe>";
             }
         }
     }
@@ -353,7 +369,8 @@ class assign_submission_estream extends assign_submission_plugin
         $embedcode = "";
         $url = new moodle_url('/mod/assign/submission/estream/upload.php', array(
             'id' => $this->assignment->get_course_module()->id,
-            'sesskey' => sesskey()
+            'sesskey' => sesskey(),
+            'cb' => assignsubmission_estream_get_cachebuster()
         ));
         $itemtitle = "Submission by " . fullname($USER);
         if (strlen($itemtitle) > 120) {

@@ -26,6 +26,10 @@ require_once('../../../../config.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
 require_once($CFG->dirroot . '/mod/assign/submission/estream/locallib.php');
 
+header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 function assignsubmission_estream_render_message($message)
 {
 ?>
@@ -210,6 +214,7 @@ if (empty($itemtitle)) {
         assignsubmission_estream_render_message(get_string('notyetconfigured', 'assignsubmission_estream'));
     } else {
         $callbackurl = $CFG->wwwroot . '/mod/assign/submission/estream/upload.php';
+        $cachebuster = assignsubmission_estream_get_cachebuster();
     ?>
         <script type="text/javascript">
             // parent.parent.document.getElementById("id_submitbutton").disabled = true;
@@ -219,7 +224,7 @@ if (empty($itemtitle)) {
         </div>-->
         <div style="text-align: center;">
             <iframe width="90%" height="700px" allow="camera;microphone;display-capture;" frameborder="0" src="<?php
-                echo s($baseurl); ?>/VLE/Moodle/Default.aspx?sourceid=11&inlinemode=moodle&delta=<?php echo s($delta) ?>&checksum=<?php echo s($checksum); ?>&itemcdid=<?php echo s($itemcdid); ?>&assign=false&assignmoodle=true&aid=<?php echo urlencode((string)$itemaid); ?>&cid=<?php echo urlencode((string)$itemcid); ?>&uid=<?php echo urlencode((string)$itemuid); ?>&title=<?php echo urlencode($itemtitle); ?>&desc=<?php echo urlencode($itemdesc); ?>&ticket=<?php echo urlencode($authticket); ?>&murl=<?php echo s($callbackurl); ?>"></iframe>
+                echo s($baseurl); ?>/VLE/Moodle/Default.aspx?sourceid=11&inlinemode=moodle&delta=<?php echo s($delta) ?>&checksum=<?php echo s($checksum); ?>&itemcdid=<?php echo s($itemcdid); ?>&assign=false&assignmoodle=true&aid=<?php echo urlencode((string)$itemaid); ?>&cid=<?php echo urlencode((string)$itemcid); ?>&uid=<?php echo urlencode((string)$itemuid); ?>&title=<?php echo urlencode($itemtitle); ?>&desc=<?php echo urlencode($itemdesc); ?>&ticket=<?php echo urlencode($authticket); ?>&murl=<?php echo s($callbackurl); ?>&cb=<?php echo s($cachebuster); ?>"></iframe>
         </div>
 <?php
     }
